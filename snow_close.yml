@@ -1,0 +1,27 @@
+---
+- name: Close SNOW change
+  hosts: localhost
+  connection: local
+  gather_facts: true
+
+  vars: # examples
+    change_number: CHG0000000
+    change_state: closed # or canceled
+    change_close_code: successful # or unsuccessful
+    change_close_notes: Build completed successfully
+
+  tasks:
+    - name: Update change to review
+      servicenow.itsm.change_request:
+        state: review
+        number: "{{ change_number }}"
+        other:
+          work_end: "{{ ansible_date_time.date }} {{ ansible_date_time.time }}"
+      when: change_state == 'closed'
+
+    - name: Close change
+      servicenow.itsm.change_request:
+        state: "{{ change_state }}"
+        number: "{{ change_number }}"
+        close_notes: "{{ change_close_notes }}"
+        close_code: "{{ change_close_code }}"

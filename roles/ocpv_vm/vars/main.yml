@@ -1,0 +1,39 @@
+---
+ocpv_vm_type_map:
+  fedora:
+    preference: fedora
+    ds_namespace: openshift-virtualization-os-images
+    os_type: linux
+  rhel8:
+    preference: rhel.8
+    ds_namespace: openshift-virtualization-os-images
+    os_type: linux
+  rhel9:
+    preference: rhel.9
+    ds_namespace: openshift-virtualization-os-images
+    os_type: linux
+  rhel10:
+    preference: rhel.10
+    ds_namespace: openshift-virtualization-os-images
+    os_type: linux
+  centos-stream9:
+    preference: centos.stream9
+    ds_namespace: openshift-virtualization-os-images
+    os_type: linux
+  centos-stream10:
+    preference: centos.stream10
+    ds_namespace: openshift-virtualization-os-images
+    os_type: linux
+  win2k22:
+    preference: windows.2k22.virtio
+    ds_namespace: virtual-machines
+    os_type: windows
+  win2k25:
+    preference: windows.2k25.virtio
+    ds_namespace: virtual-machines
+    os_type: windows
+ocpv_vm_win_sysprep_vol:
+  - name: sysprep
+    cdrom:
+      bus: sata
+ocpv_vm_win_initial_admin_pass: 

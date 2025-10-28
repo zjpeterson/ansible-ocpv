@@ -1,0 +1,13 @@
+---
+- name: Add DNS record to IPA
+  hosts: localhost
+  gather_facts: false
+
+  tasks:
+    - name: Add record
+      community.general.ipa_dnsrecord:
+        record_name: "{{ ocpv_vm_name }}"
+        record_value: "{{ ocpv_vm_ip_address | ansible.utils.ipaddr('address') }}"
+        zone_name: example.com
+        record_type: A
+        validate_certs: false

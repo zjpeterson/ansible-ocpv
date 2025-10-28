@@ -1,0 +1,47 @@
+---
+- name: Initialize new VM in SNOW
+  hosts: localhost
+  connection: local
+  gather_facts: true
+
+  vars:
+    ocpv_vm_name: examplevm
+
+  tasks:
+    - name: Create a configuration item
+      servicenow.itsm.configuration_item:
+        name: "{{ ocpv_vm_name }}"
+        sys_class_name: cmdb_ci_kvm_vm_instance
+
+    - name: Create change request
+      servicenow.itsm.change_request:
+        type: standard
+        state: new
+        short_description: Provision new VM {{ ocpv_vm_name }}
+        description: New OpenShift VM via Ansible
+        priority: moderate
+        risk: low
+        impact: low
+        other:
+          cmdb_ci: "{{ ocpv_vm_name }}"
+          start_date: "{{ ansible_date_time.date }} {{ ansible_date_time.time }}"
+          end_date: "{{ '%Y-%m-%d %H:%M:%S' | strftime(ansible_date_time.epoch | int + 3600) }}"
+      register: _new_change
+
+    - name: Update to scheduled
+      servicenow.itsm.change_request:
+        state: scheduled
+        number: "{{ _new_change.record.number }}"
+        assignment_group: System Admins
+
+    - name: Start implementation
+      servicenow.itsm.change_request:
+        state: implement
+        number: "{{ _new_change.record.number }}"
+        other:
+          work_start: "{{ ansible_date_time.date }} {{ ansible_date_time.time }}"
+
+    - name: Save change number
+      ansible.builtin.set_stats:
+        data:
+          change_number: "{{ _new_change.record.number }}"

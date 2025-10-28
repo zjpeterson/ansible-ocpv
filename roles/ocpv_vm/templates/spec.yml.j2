@@ -1,0 +1,53 @@
+domain:
+  devices:
+    autoattachPodInterface: false
+    disks: {% if 'win' in ocpv_vm_type %}{{ ocpv_vm_win_sysprep_vol }}{% else %}[]{% endif %}
+
+    interfaces:
+      - model: virtio
+        name: outside
+        bridge: {}
+{% if ocpv_vm_pod_networking %}
+      - masquerade: {}
+        name: default
+{% endif %}
+subdomain: headless
+networks:
+  - name: outside
+    multus:
+      networkName: "{{ ocpv_vm_net_outside }}"
+{% if ocpv_vm_pod_networking %}
+  - name: default
+    pod: {}
+{% endif %}
+volumes:
+  - name: rootdisk
+    dataVolume:
+      name: "{{ ocpv_vm_name }}-volume"
+{% if ocpv_vm_type_map[ocpv_vm_type]['os_type'] != 'windows' %}
+  - name: cloudinitdisk
+    cloudInitNoCloud:
+{% if ocpv_vm_ip_address %}
+      networkData: |
+        version: 2
+        ethernets:
+          eth0:
+            addresses:
+              - {{ ocpv_vm_ip_address }}
+            gateway4: {{ ocpv_vm_ip_gateway }}
+            nameservers:
+              addresses: [{{ ocpv_vm_nameserver }}]
+{% endif %}
+      userData: |
+        #cloud-config
+        timezone: {{ ocpv_vm_timezone.linux }}
+        users:
+          - name: ansible
+            sudo: ALL=(ALL) NOPASSWD:ALL
+            ssh_authorized_keys: "{{ ocpv_vm_user_ssh_pubkey }}"
+{% else %}
+  - name: sysprep
+    sysprep:
+      configMap:
+        name: sysprep-config-{{ ocpv_vm_type }}
+{% endif %}

@@ -1,0 +1,9 @@
+---
+plugin: redhat.openshift_virtualization.kubevirt
+host_format: '{name}'
+compose:
+  os_type: vm_labels.os_type
+keyed_groups:
+  - key: os_type
+    prefix: os
+strict: false

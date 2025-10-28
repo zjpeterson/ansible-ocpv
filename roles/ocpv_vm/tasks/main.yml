@@ -1,0 +1,93 @@
+---
+- name: Validate IP address
+  vars:
+    _cidr: "{{ ocpv_vm_ip_address | split('/') }}"
+  ansible.builtin.assert:
+    that: _cidr | length == 2
+  when: ocpv_vm_ip_address
+
+- name: Ensure project
+  redhat.openshift.k8s:
+    api_version: project.openshift.io/v1
+    kind: Project
+    name: "{{ ocpv_vm_namespace }}"
+    state: present
+
+- name: Ensure Windows Sysprep ConfigMap
+  redhat.openshift.k8s:
+    namespace: "{{ ocpv_vm_namespace }}"
+    kind: ConfigMap
+    name: sysprep-config-{{ ocpv_vm_type }}
+    resource_definition:
+      data:
+        unattend.xml: "{{ lookup('template', ocpv_vm_type + '-unattend.xml.j2') }}"
+    validate_certs: false
+  when: ocpv_vm_type_map[ocpv_vm_type]['os_type'] == 'windows'
+
+- name: Create OCP virt VM
+  redhat.openshift_virtualization.kubevirt_vm:
+    name: "{{ ocpv_vm_name }}"
+    namespace: "{{ ocpv_vm_namespace }}"
+    annotations:
+      openshift.io/node-selector: node-role.kubernetes.io/worker=true
+    labels:
+      os_type: "{{ ocpv_vm_type_map[ocpv_vm_type]['os_type'] }}"
+    instancetype:
+      name: "{{ ocpv_vm_size }}"
+    preference:
+      name: "{{ ocpv_vm_type_map[ocpv_vm_type]['preference'] }}"
+    data_volume_templates:
+      - metadata:
+          name: "{{ ocpv_vm_name }}-volume"
+        spec:
+          sourceRef:
+            kind: DataSource
+            name: "{{ ocpv_vm_type }}"
+            namespace: "{{ ocpv_vm_type_map[ocpv_vm_type]['ds_namespace'] }}"
+          storage:
+            resources:
+              requests:
+                storage: "{{ ocpv_vm_disk * 1024 * 1024 * 1024 }}"
+            storageClassName: "{{ ocpv_vm_storage_class }}"
+    spec: "{{ lookup('template', 'spec.yml.j2') | from_yaml }}"
+    validate_certs: false
+
+- name: Wait for network to come up
+  vars:
+    _outside: "{{ _vm.resources.0.status.interfaces | selectattr('name', 'defined') | selectattr('name', 'eq', 'outside') | first }}"
+  redhat.openshift_virtualization.kubevirt_vmi_info:
+    name: "{{ ocpv_vm_name }}"
+    namespace: "{{ ocpv_vm_namespace }}"
+    validate_certs: false
+  register: _vm
+  until:
+    - _outside.ipAddresses is defined
+    - _outside.ipAddresses | length > 0
+  retries: 20
+  delay: 30
+
+- name: Set IP address
+  vars:
+    _outside: "{{ _vm.resources.0.status.interfaces | selectattr('name', 'defined') | selectattr('name', 'eq', 'outside') | first }}"
+  ansible.builtin.set_fact:
+    _ip_address: "{{ _outside.ipAddress }}"
+
+- name: Windows additional setup
+  when: ocpv_vm_type_map[ocpv_vm_type]['os_type'] == 'windows'
+  vars:
+    ansible_connection: winrm
+    ansible_host: "{{ _ip_address }}"
+    ansible_port: 5985
+    ansible_winrm_transport: ntlm
+  block:
+    - name: Windows user setup
+      vars:
+        ansible_user: Administrator
+        ansible_password: "{{ ocpv_vm_win_initial_admin_pass }}"
+      ansible.builtin.include_tasks: win_users.yml
+    - name: Windows networking setup
+      vars:
+        ansible_user: ansible
+        ansible_password: "{{ ocpv_vm_user_win_password }}"
+      ansible.builtin.include_tasks: win_network.yml
+      when: ocpv_vm_ip_address

@@ -1,0 +1,31 @@
+---
+- name: Update VM
+  hosts: "{{ ocpv_vm_name }}"
+  become: true
+
+  tasks:
+    - name: Subscribe the machine
+      community.general.redhat_subscription:
+        username: "{{ redhat_username }}"
+        password: "{{ redhat_password }}"
+      when: "'rhel9' in ocpv_vm_type"
+
+    - name: Install updates
+      ansible.builtin.dnf:
+        name: "*"
+        state: latest
+      notify: Reboot
+      when: inventory_hostname in groups['os_linux']
+
+    - name: Install updates
+      ansible.windows.win_updates:
+        category_names:
+          - SecurityUpdates
+          - CriticalUpdates
+          - UpdateRollups
+        reboot: true
+      when: inventory_hostname in groups['os_windows']
+
+  handlers:
+    - name: Reboot
+      ansible.builtin.reboot:

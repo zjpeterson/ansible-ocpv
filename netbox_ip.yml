@@ -1,0 +1,46 @@
+- name: Register VM in Netbox and get an IP for it
+  connection: local
+  hosts: localhost
+  gather_facts: false
+
+  vars:
+    netbox_vm_prefix: 0.0.0.0/24 # example
+
+  tasks:
+    - name: Make VM
+      netbox.netbox.netbox_virtual_machine:
+        netbox_url: "{{ netbox_api }}"
+        netbox_token: "{{ netbox_token }}"
+        data:
+          name: "{{ ocpv_vm_name }}"
+          cluster: OCP Virt
+        validate_certs: false
+
+    - name: Make interface
+      netbox.netbox.netbox_vm_interface:
+        netbox_url: "{{ netbox_api }}"
+        netbox_token: "{{ netbox_token }}"
+        data:
+          name: eth0
+          virtual_machine: "{{ ocpv_vm_name }}"
+        validate_certs: false
+
+    - name: Add IP
+      netbox.netbox.netbox_ip_address:
+        netbox_url: "{{ netbox_api }}"
+        netbox_token: "{{ netbox_token }}"
+        data:
+          prefix: "{{ netbox_vm_prefix }}"
+          assigned_object:
+            name: eth0
+            virtual_machine: "{{ ocpv_vm_name }}"
+        state: present
+        validate_certs: false
+      register: _ip
+
+    - name: Save IP assignment
+      ansible.builtin.set_stats:
+        data:
+          ocpv_vm_ip_address: "{{ _ip.ip_address.address }}"
+          ocpv_vm_ip_gateway: "{{ _ip.ip_address.address | ansible.utils.ipaddr('1') | ansible.utils.ipaddr('address') }}"
+          ocpv_vm_nameserver: "{{ _ip.ip_address.address | ansible.utils.ipaddr('1') | ansible.utils.ipaddr('address') }}"

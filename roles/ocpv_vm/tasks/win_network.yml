@@ -1,0 +1,33 @@
+---
+- name: Wait until connection is available
+  ansible.builtin.wait_for_connection:
+
+- name: Set hostname
+  ansible.windows.win_hostname:
+    name: "{{ ocpv_vm_name }}"
+
+- name: Enable RDP
+  ansible.windows.win_shell: >-
+    Set-ItemProperty
+    -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server'
+    -Name 'fDenyTSConnections' -Value 0
+
+- name: Apply DNS server
+  ansible.windows.win_shell: >-
+    Get-NetIpAddress -InterfaceAlias 'Ethernet Instance 0' |
+    Set-DnsClientServerAddress -ServerAddresses ('{{ ocpv_vm_nameserver }}')
+
+- name: Apply IP address
+  vars:
+    _cidr: "{{ ocpv_vm_ip_address | split('/') }}"
+  ansible.windows.win_shell: >-
+    Get-NetIpAddress -InterfaceAlias 'Ethernet Instance 0' |
+    New-NetIpAddress -IpAddress {{ _cidr.0 }} -PrefixLength {{ _cidr.1 }} -DefaultGateway {{ ocpv_vm_ip_gateway }}
+  async: 30
+  poll: 0
+
+- name: Update IP address
+  vars:
+    _cidr: "{{ ocpv_vm_ip_address | split('/') }}"
+  ansible.builtin.set_fact:
+    _ip_address: "{{ _cidr.0 }}"

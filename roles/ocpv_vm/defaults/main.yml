@@ -1,0 +1,18 @@
+---
+ocpv_vm_name: test
+ocpv_vm_size: u1.small
+ocpv_vm_type: rhel9
+ocpv_vm_disk: 50
+ocpv_vm_user_ssh_pubkey: ssh-ed25519 AAAA...
+ocpv_vm_namespace: virtual-machines
+ocpv_vm_user_win_password: !vault |
+  $ANSIBLE_VAULT;1.1;AES256...
+ocpv_vm_storage_class: storage-class
+ocpv_vm_net_outside: default/vlanX
+ocpv_vm_pod_networking: false
+ocpv_vm_ip_address: false
+ocpv_vm_ip_gateway: 0.0.0.0
+ocpv_vm_nameserver: 0.0.0.0
+ocpv_vm_timezone:
+  linux: America/Chicago
+  windows: Central Standard Time
