@@ -1,0 +1,8 @@
+---
+- name: Make OCPv VM
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  roles:
+    - ocpv_vm
