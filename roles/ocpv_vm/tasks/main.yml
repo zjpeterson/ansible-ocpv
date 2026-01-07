@@ -58,8 +58,8 @@
   until:
     - _outside.ipAddresses is defined
     - _outside.ipAddresses | length > 0
-  retries: 20
-  delay: 30
+  retries: 30
+  delay: 10
 
 - name: Set IP address
   vars:
