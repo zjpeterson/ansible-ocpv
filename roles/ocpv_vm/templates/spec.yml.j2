@@ -31,7 +31,7 @@ volumes:
       networkData: |
         version: 2
         ethernets:
-          eth0:
+          {% if ocpv_vm_type in ['rhel8', 'rhel9'] %}eth0{% else %}enp1s0{% endif %}:
             addresses:
               - {{ ocpv_vm_ip_address }}
             gateway4: {{ ocpv_vm_ip_gateway }}
