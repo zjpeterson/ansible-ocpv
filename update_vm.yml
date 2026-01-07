@@ -8,7 +8,7 @@
       community.general.redhat_subscription:
         username: "{{ redhat_username }}"
         password: "{{ redhat_password }}"
-      when: "'rhel9' in ocpv_vm_type"
+      when: "'rhel' in ocpv_vm_type"
 
     - name: Install updates
       ansible.builtin.dnf:
