@@ -1,0 +1,7 @@
+---
+collections:
+  - redhat.openshift
+  - redhat.openshift_virtualization
+  - servicenow.itsm
+  - netbox.netbox
+  - community.general
