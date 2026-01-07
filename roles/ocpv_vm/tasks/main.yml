@@ -4,14 +4,9 @@
     _cidr: "{{ ocpv_vm_ip_address | split('/') }}"
   ansible.builtin.assert:
     that: _cidr | length == 2
-  when: ocpv_vm_ip_address
-
-- name: Ensure project
-  redhat.openshift.k8s:
-    api_version: project.openshift.io/v1
-    kind: Project
-    name: "{{ ocpv_vm_namespace }}"
-    state: present
+  when:
+    - ocpv_vm_ip_address
+    - ocpv_vm_ip_address | length > 0
 
 - name: Ensure Windows Sysprep ConfigMap
   redhat.openshift.k8s:
