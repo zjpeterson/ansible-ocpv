@@ -13,7 +13,7 @@
         netbox_token: "{{ netbox_token }}"
         data:
           name: "{{ ocpv_vm_name }}"
-          cluster: OCP Virt
+          cluster: "{{ netbox_vm_cluster }}"
         validate_certs: false
 
     - name: Make interface
