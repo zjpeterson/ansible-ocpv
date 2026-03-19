@@ -1,6 +1,6 @@
 ---
 - name: Update VM
-  hosts: "{{ ocpv_vm_name | default('all') }}"
+  hosts: "{{ ocpv_vm_name | default('all:!power_Halted:!os_appliance') }}"
   become: true
 
   tasks:
